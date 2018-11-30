@@ -72,18 +72,20 @@ public class Main {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		frame.setBackground(Color.WHITE);
 		frame.setResizable(false);
-		frame.setBounds(100, 100, 455, 315);
+		frame.setBounds(100, 100, 594, 584);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
 		JPanel painel_inicial = new JPanel();
-		painel_inicial.setBounds(0, 0, 449, 286);
+		painel_inicial.setBackground(UIManager.getColor("Panel.background"));
+		painel_inicial.setBounds(0, 0, 560, 545);
 		frame.getContentPane().add(painel_inicial);
 		painel_inicial.setLayout(null);
 		
 		JButton botao_novo_boleto = new JButton("Novo Boleto");
-		botao_novo_boleto.setBounds(306, 194, 110, 23);
+		botao_novo_boleto.setBounds(422, 454, 110, 23);
 		painel_inicial.add(botao_novo_boleto);
 		
 		JButton botao_sair = new JButton("Sair");
@@ -93,7 +95,7 @@ public class Main {
 				frame.dispose();
 			}
 		});
-		botao_sair.setBounds(306, 236, 110, 23);
+		botao_sair.setBounds(422, 496, 110, 23);
 		painel_inicial.add(botao_sair);
 		painel_inicial.setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{botao_novo_boleto, botao_sair}));
 		

@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="C:/Users/BodE_/eclipse-workspace/Projeto de Aplicação - Programação Orientada a Objetos/src/dependências/commons-lang-2.6.jar"/>
 	<classpathentry kind="lib" path="C:/Users/BodE_/eclipse-workspace/Projeto de Aplicação - Programação Orientada a Objetos/src/dependências/JRimum-Bopepo-SNAPSHOT-20110415-bin.jar"/>
 	<classpathentry kind="lib" path="C:/Users/BodE_/eclipse-workspace/Projeto de Aplicação - Programação Orientada a Objetos/src/dependências/log4j-1.2.17.jar"/>
+	<classpathentry kind="lib" path="C:/Users/BodE_/eclipse-workspace/Projeto-de-AplicacaoPO/src/dependências/swingx-1.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -15,9 +15,21 @@ import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 
+import org.jrimum.bopepo.BancosSuportados;
 import org.jrimum.bopepo.Boleto;
 import org.jrimum.bopepo.view.BoletoViewer;
+import org.jrimum.domkee.comum.pessoa.endereco.CEP;
+import org.jrimum.domkee.comum.pessoa.endereco.Endereco;
+import org.jrimum.domkee.comum.pessoa.endereco.UnidadeFederativa;
+import org.jrimum.domkee.financeiro.banco.febraban.Agencia;
+import org.jrimum.domkee.financeiro.banco.febraban.Carteira;
+import org.jrimum.domkee.financeiro.banco.febraban.Cedente;
+import org.jrimum.domkee.financeiro.banco.febraban.ContaBancaria;
+import org.jrimum.domkee.financeiro.banco.febraban.NumeroDaConta;
+import org.jrimum.domkee.financeiro.banco.febraban.Sacado;
+import org.jrimum.domkee.financeiro.banco.febraban.SacadorAvalista;
 import org.jrimum.domkee.financeiro.banco.febraban.TipoDeTitulo;
+import org.jrimum.domkee.financeiro.banco.febraban.Titulo;
 import org.jrimum.domkee.financeiro.banco.febraban.Titulo.EnumAceite;
 
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -25,8 +37,10 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.function.Predicate;
 import java.awt.event.ActionEvent;
 import javax.swing.UIManager;
@@ -57,11 +71,11 @@ import org.jdesktop.swingx.JXDatePicker;
 import java.awt.event.HierarchyListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyBoundsAdapter;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Panel extends JPanel {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 	private JTextField sacado_nome_textField;
 	private JTextField sacado_CPF_textField;
@@ -126,13 +140,14 @@ public class Panel extends JPanel {
 
 		JLabel lblEscolhaOBanco = new JLabel("Escolha o Banco:");
 		lblEscolhaOBanco.setFont(new Font("SansSerif", Font.PLAIN, 10));
-		lblEscolhaOBanco.setBounds(181, 16, 110, 16);
+		lblEscolhaOBanco.setBounds(10, 16, 110, 16);
 		add(lblEscolhaOBanco);
 
 		JComboBox comboBox = new JComboBox();
+		comboBox.setBackground(Color.WHITE);
 		comboBox.setToolTipText("Escolha seu banco");
-		comboBox.setModel(new DefaultComboBoxModel(new String[] {"...", "Bradesco", "Ita\u00FA", "Banco do Brasil", "HSBC", "Caixa Econ\u00F4mica Federal"}));
-		comboBox.setBounds(291, 11, 100, 26);
+		comboBox.setModel(new DefaultComboBoxModel(BancosSuportados.values()));
+		comboBox.setBounds(103, 11, 303, 26);
 		add(comboBox);
 		add(sacado_titulo_label);
 
@@ -147,9 +162,9 @@ public class Panel extends JPanel {
 		add(sacado_cpf_label);
 
 		JLabel sacado_endereco_label = new JLabel("Endere\u00E7o");
-		sacado_endereco_label.setForeground(Color.LIGHT_GRAY);
+		sacado_endereco_label.setForeground(Color.GRAY);
 		sacado_endereco_label.setFont(new Font("SansSerif", Font.PLAIN, 10));
-		sacado_endereco_label.setBounds(10, 110, 64, 14);
+		sacado_endereco_label.setBounds(10, 108, 64, 14);
 		add(sacado_endereco_label);
 
 		JLabel sacado_UF_label = new JLabel("UF");
@@ -184,7 +199,7 @@ public class Panel extends JPanel {
 
 		sacado_nome_textField = new JTextField();
 		sacado_nome_textField.addFocusListener(new FocusAdapter() {
-			// Verificador de nome; nome não pode conter números, nome deve começar com letra maiúscula (caso não comece, capitalizar automaticamente); espaços disnecessários também serão removidos
+			// Verificador de nome; nome nÃ£o pode conter nÃºmeros, nome deve comeÃ§ar com letra maiÃºscula (caso nÃ£o comece, capitalizar automaticamente); espaÃ§os disnecessÃ¡rios tambÃ©m serÃ£o removidos
 			@Override
 			public void focusLost(FocusEvent e) {
 				if(sacado_nome_textField.getText().length()==0) {
@@ -245,12 +260,12 @@ public class Panel extends JPanel {
 						sacado_CPF_textField.setBackground(Color.RED);
 						sacado_CPF_textField.setForeground(Color.WHITE);
 						sacado_CPF_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						sacado_CPF_textField.setToolTipText("Digite somente números");
+						sacado_CPF_textField.setToolTipText("Digite somente nÃºmeros");
 					}	else if(sem_ponto_e_sem_traco.length()!=11){
 						sacado_CPF_textField.setBackground(Color.RED);
 						sacado_CPF_textField.setForeground(Color.WHITE);
 						sacado_CPF_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						sacado_CPF_textField.setToolTipText("Digite um CPF válido");
+						sacado_CPF_textField.setToolTipText("Digite um CPF vÃ¡lido");
 					}	else{
 						sacado_CPF_textField.setBackground(Color.WHITE);
 						sacado_CPF_textField.setForeground(Color.BLACK);
@@ -297,7 +312,7 @@ public class Panel extends JPanel {
 		});
 		sacado_UF_comboBox.setName(" ");
 		sacado_UF_comboBox.setBackground(Color.WHITE);
-		sacado_UF_comboBox.setModel(new DefaultComboBoxModel(new String[] {"", "Acre (AC)", "Alagoas (AL)", "Amazonas (AM)", "Amap\u00E1 (AP)", "Bahia (BA)", "Cear\u00E1 (CE)", "Distrito Federal (DF)", "Esp\u00EDrito Santo (ES)", "Goi\u00E1s (GO)", "Maranh\u00E3o (MA)", "Mato Grosso (MT)", "Mato Grosso do Sul (MS)", "Minas Gerais (MG)", "Par\u00E1 (PA)", "Para\u00EDba (PB)", "Paran\u00E1 (PR)", "Pernambuco (PE)", "Piau\u00ED (PI)", "Rio de Janeiro (RJ)", "Rio Grande do Norte (RN)", "Rio Grande do Sul (RS)", "Rond\u00F4nia (RO)", "Roraima (RR)", "S\u00E3o Paulo (SP)", "Sergipe (SE)", "Tocantins (TO)"}));
+		sacado_UF_comboBox.setModel(new DefaultComboBoxModel(new String[] {"...", "Acre (AC)", "Alagoas (AL)", "Amazonas (AM)", "Amap\u00E1 (AP)", "Bahia (BA)", "Cear\u00E1 (CE)", "Distrito Federal (DF)", "Esp\u00EDrito Santo (ES)", "Goi\u00E1s (GO)", "Maranh\u00E3o (MA)", "Mato Grosso (MT)", "Mato Grosso do Sul (MS)", "Minas Gerais (MG)", "Par\u00E1 (PA)", "Para\u00EDba (PB)", "Paran\u00E1 (PR)", "Pernambuco (PE)", "Piau\u00ED (PI)", "Rio de Janeiro (RJ)", "Rio Grande do Norte (RN)", "Rio Grande do Sul (RS)", "Rond\u00F4nia (RO)", "Roraima (RR)", "S\u00E3o Paulo (SP)", "Sergipe (SE)", "Tocantins (TO)"}));
 		sacado_UF_comboBox.setToolTipText("Escolha a UF");
 		sacado_UF_comboBox.setBounds(76, 124, 86, 20);
 		add(sacado_UF_comboBox);
@@ -315,7 +330,7 @@ public class Panel extends JPanel {
 			}
 			@Override
 			public void focusGained(FocusEvent e) {
-				if(sacado_localidade_textField.getText().equals("Digite o CEP")) {
+				if(sacado_localidade_textField.getText().equals("Digite a localidade")) {
 					sacado_localidade_textField.setText("");
 					sacado_localidade_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					sacado_localidade_textField.setBackground(Color.WHITE);
@@ -343,12 +358,12 @@ public class Panel extends JPanel {
 						sacado_CEP_textField.setBackground(Color.RED);
 						sacado_CEP_textField.setForeground(Color.WHITE);
 						sacado_CEP_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						sacado_CEP_textField.setToolTipText("Digite somente números");
+						sacado_CEP_textField.setToolTipText("Digite somente nÃºmeros");
 					}	else if(sem_traco.length()!=8){
 						sacado_CEP_textField.setBackground(Color.RED);
 						sacado_CEP_textField.setForeground(Color.WHITE);
 						sacado_CEP_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						sacado_CEP_textField.setToolTipText("Digite um CEP válido");
+						sacado_CEP_textField.setToolTipText("Digite um CEP vÃ¡lido");
 					}	else{
 						sacado_CEP_textField.setBackground(Color.WHITE);
 						sacado_CEP_textField.setForeground(Color.BLACK);
@@ -390,7 +405,7 @@ public class Panel extends JPanel {
 			}
 			@Override
 			public void focusGained(FocusEvent e) {
-				if(sacado_bairro_textField.getText().equals("Digite o CEP")) {
+				if(sacado_bairro_textField.getText().equals("Digite o bairro")) {
 					sacado_bairro_textField.setText("");
 					sacado_bairro_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					sacado_bairro_textField.setBackground(Color.WHITE);
@@ -416,7 +431,7 @@ public class Panel extends JPanel {
 			}
 			@Override
 			public void focusGained(FocusEvent e) {
-				if(sacado_logradouro_textField.getText().equals("Digite o CEP")) {
+				if(sacado_logradouro_textField.getText().equals("Digite o logradouro")) {
 					sacado_logradouro_textField.setText("");
 					sacado_logradouro_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					sacado_logradouro_textField.setBackground(Color.WHITE);
@@ -437,19 +452,20 @@ public class Panel extends JPanel {
 				if(sacado_numero_textField.getText().length()==0) {
 					sacado_numero_textField.setForeground(Color.LIGHT_GRAY);
 					sacado_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-					sacado_numero_textField.setText("Digite o número");
+					sacado_numero_textField.setText("Digite o nÃºmero");
 				}	else {
-					String sem_numero = sacado_numero_textField.getText().replace("s/n", "0");
+					String sem_numero = "";
 					sem_numero = sacado_numero_textField.getText().replace("sn", "0");
+					sem_numero = sacado_numero_textField.getText().replace("s/n", "0");
 					if(!StringUtils.isNumeric(sem_numero)) {
 						sacado_numero_textField.setBackground(Color.RED);
 						sacado_numero_textField.setForeground(Color.WHITE);
 						sacado_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						sacado_numero_textField.setToolTipText("Digite somente números");
+						sacado_numero_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						sacado_numero_textField.setBackground(Color.WHITE);
 						sacado_numero_textField.setForeground(Color.BLACK);
-						sacado_numero_textField.setText(formatar_textfield_numero(sacado_numero_textField.getText()));
+						sacado_numero_textField.setText(formatar_textfield_numero(sem_numero));
 					}
 				}
 			}
@@ -459,9 +475,10 @@ public class Panel extends JPanel {
 					sacado_numero_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					sacado_numero_textField.setBackground(Color.WHITE);
 					sacado_numero_textField.setForeground(Color.BLACK);
+					sacado_numero_textField.setText("");
 					sacado_numero_textField.selectAll();
 				}
-				if(sacado_numero_textField.getText().equals("Digite o número")) {
+				if(sacado_numero_textField.getText().equals("Digite o nÃºmero")) {
 					sacado_numero_textField.setText("");
 					sacado_numero_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					sacado_numero_textField.setBackground(Color.WHITE);
@@ -495,9 +512,9 @@ public class Panel extends JPanel {
 		add(avalista_CPF_label);
 
 		JLabel avalista_endereco_label = new JLabel("Endere\u00E7o");
-		avalista_endereco_label.setForeground(Color.LIGHT_GRAY);
+		avalista_endereco_label.setForeground(Color.GRAY);
 		avalista_endereco_label.setFont(new Font("SansSerif", Font.PLAIN, 10));
-		avalista_endereco_label.setBounds(193, 110, 64, 14);
+		avalista_endereco_label.setBounds(193, 108, 64, 14);
 		add(avalista_endereco_label);
 
 		JLabel avalista_UF_label = new JLabel("UF");
@@ -572,7 +589,7 @@ public class Panel extends JPanel {
 						avalista_CPF_textField.setBackground(Color.RED);
 						avalista_CPF_textField.setForeground(Color.WHITE);
 						avalista_CPF_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						avalista_CPF_textField.setToolTipText("Digite somente números");
+						avalista_CPF_textField.setToolTipText("Digite somente nÃºmeros");
 					}	else if(sem_ponto_e_sem_traco.length()==11){
 						avalista_CPF_textField.setBackground(Color.WHITE);
 						avalista_CPF_textField.setForeground(Color.BLACK);
@@ -585,7 +602,7 @@ public class Panel extends JPanel {
 						avalista_CPF_textField.setBackground(Color.RED);
 						avalista_CPF_textField.setForeground(Color.WHITE);
 						avalista_CPF_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						avalista_CPF_textField.setToolTipText("Digite um CPF/CNPJ válido");
+						avalista_CPF_textField.setToolTipText("Digite um CPF/CNPJ vÃ¡lido");
 					}
 				}
 			}
@@ -629,7 +646,7 @@ public class Panel extends JPanel {
 		avalista_UF_comboBox.setToolTipText("Escolha a UF");
 		avalista_UF_comboBox.setName(" ");
 		avalista_UF_comboBox.setBackground(Color.WHITE);
-		avalista_UF_comboBox.setModel(new DefaultComboBoxModel(new String[] {"", "Acre (AC)", "Alagoas (AL)", "Amazonas (AM)", "Amap\u00E1 (AP)", "Bahia (BA)", "Cear\u00E1 (CE)", "Distrito Federal (DF)", "Esp\u00EDrito Santo (ES)", "Goi\u00E1s (GO)", "Maranh\u00E3o (MA)", "Mato Grosso (MT)", "Mato Grosso do Sul (MS)", "Minas Gerais (MG)", "Par\u00E1 (PA)", "Para\u00EDba (PB)", "Paran\u00E1 (PR)", "Pernambuco (PE)", "Piau\u00ED (PI)", "Rio de Janeiro (RJ)", "Rio Grande do Norte (RN)", "Rio Grande do Sul (RS)", "Rond\u00F4nia (RO)", "Roraima (RR)", "S\u00E3o Paulo (SP)", "Sergipe (SE)", "Tocantins (TO)"}));
+		avalista_UF_comboBox.setModel(new DefaultComboBoxModel(new String[] {"...", "Acre (AC)", "Alagoas (AL)", "Amazonas (AM)", "Amap\u00E1 (AP)", "Bahia (BA)", "Cear\u00E1 (CE)", "Distrito Federal (DF)", "Esp\u00EDrito Santo (ES)", "Goi\u00E1s (GO)", "Maranh\u00E3o (MA)", "Mato Grosso (MT)", "Mato Grosso do Sul (MS)", "Minas Gerais (MG)", "Par\u00E1 (PA)", "Para\u00EDba (PB)", "Paran\u00E1 (PR)", "Pernambuco (PE)", "Piau\u00ED (PI)", "Rio de Janeiro (RJ)", "Rio Grande do Norte (RN)", "Rio Grande do Sul (RS)", "Rond\u00F4nia (RO)", "Roraima (RR)", "S\u00E3o Paulo (SP)", "Sergipe (SE)", "Tocantins (TO)"}));
 		avalista_UF_comboBox.setBounds(259, 124, 86, 20);
 		add(avalista_UF_comboBox);
 
@@ -673,12 +690,12 @@ public class Panel extends JPanel {
 						avalista_CEP_textField.setBackground(Color.RED);
 						avalista_CEP_textField.setForeground(Color.WHITE);
 						avalista_CEP_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						avalista_CEP_textField.setToolTipText("Digite somente números");
+						avalista_CEP_textField.setToolTipText("Digite somente nÃºmeros");
 					}	else if(sem_traco.length()!=8){
 						avalista_CEP_textField.setBackground(Color.RED);
 						avalista_CEP_textField.setForeground(Color.WHITE);
 						avalista_CEP_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						avalista_CEP_textField.setToolTipText("Digite um CEP válido");
+						avalista_CEP_textField.setToolTipText("Digite um CEP vÃ¡lido");
 					}	else{
 						avalista_CEP_textField.setBackground(Color.WHITE);
 						avalista_CEP_textField.setForeground(Color.BLACK);
@@ -767,7 +784,7 @@ public class Panel extends JPanel {
 				if(avalista_numero_textField.getText().length()==0) {
 					avalista_numero_textField.setForeground(Color.LIGHT_GRAY);
 					avalista_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-					avalista_numero_textField.setText("Digite o número");
+					avalista_numero_textField.setText("Digite o nÃºmero");
 				}	else {
 					String sem_numero = avalista_numero_textField.getText().replace("s/n", "0");
 					sem_numero = avalista_numero_textField.getText().replace("sn", "0");
@@ -775,7 +792,7 @@ public class Panel extends JPanel {
 						avalista_numero_textField.setBackground(Color.RED);
 						avalista_numero_textField.setForeground(Color.WHITE);
 						avalista_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						avalista_numero_textField.setToolTipText("Digite somente números");
+						avalista_numero_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						avalista_numero_textField.setBackground(Color.WHITE);
 						avalista_numero_textField.setForeground(Color.BLACK);
@@ -791,7 +808,7 @@ public class Panel extends JPanel {
 					avalista_numero_textField.setForeground(Color.BLACK);
 					avalista_numero_textField.selectAll();
 				}
-				if(avalista_numero_textField.getText().equals("Digite o número")) {
+				if(avalista_numero_textField.getText().equals("Digite o nÃºmero")) {
 					avalista_numero_textField.setText("");
 					avalista_numero_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					avalista_numero_textField.setBackground(Color.WHITE);
@@ -826,7 +843,7 @@ public class Panel extends JPanel {
 
 		cedente_nome_textField = new JTextField();
 		cedente_nome_textField.addFocusListener(new FocusAdapter() {
-			// Verificador de nome; nome não pode conter números, nome deve começar com letra maiúscula (caso não comece, capitalizar automaticamente); espaços disnecessários também serão removidos
+			// Verificador de nome; nome nÃ£o pode conter nÃºmeros, nome deve comeÃ§ar com letra maiÃºscula (caso nÃ£o comece, capitalizar automaticamente); espaÃ§os disnecessÃ¡rios tambÃ©m serÃ£o removidos
 			@Override
 			public void focusLost(FocusEvent e) {
 				if(cedente_nome_textField.getText().length()==0) {
@@ -886,12 +903,12 @@ public class Panel extends JPanel {
 						cedente_CNPJ_textField.setBackground(Color.RED);
 						cedente_CNPJ_textField.setForeground(Color.WHITE);
 						cedente_CNPJ_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						cedente_CNPJ_textField.setToolTipText("Digite somente números");
+						cedente_CNPJ_textField.setToolTipText("Digite somente nÃºmeros");
 					}	else if(sem_ponto_e_sem_traco.length()!=14){
 						cedente_CNPJ_textField.setBackground(Color.RED);
 						cedente_CNPJ_textField.setForeground(Color.WHITE);
 						cedente_CNPJ_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						cedente_CNPJ_textField.setToolTipText("Digite um CNPJ válido");
+						cedente_CNPJ_textField.setToolTipText("Digite um CNPJ vÃ¡lido");
 					}	else{
 						cedente_CNPJ_textField.setBackground(Color.WHITE);
 						cedente_CNPJ_textField.setForeground(Color.BLACK);
@@ -941,12 +958,12 @@ public class Panel extends JPanel {
 		add(conta_tipo_carteira_label);
 
 		JLabel conta_dados_agencia_label = new JLabel("Dados da Ag\u00EAncia");
-		conta_dados_agencia_label.setForeground(Color.LIGHT_GRAY);
+		conta_dados_agencia_label.setForeground(Color.GRAY);
 		conta_dados_agencia_label.setFont(new Font("SansSerif", Font.PLAIN, 10));
-		conta_dados_agencia_label.setBounds(372, 190, 94, 14);
+		conta_dados_agencia_label.setBounds(372, 185, 94, 14);
 		add(conta_dados_agencia_label);
 
-		JLabel conta_digito_agencia_label = new JLabel("Digito");
+		JLabel conta_digito_agencia_label = new JLabel("D\u00EDgito");
 		conta_digito_agencia_label.setFont(new Font("SansSerif", Font.PLAIN, 10));
 		conta_digito_agencia_label.setBounds(372, 205, 64, 14);
 		add(conta_digito_agencia_label);
@@ -963,14 +980,14 @@ public class Panel extends JPanel {
 				if(conta_numero_textField.getText().length()==0) {
 					conta_numero_textField.setForeground(Color.LIGHT_GRAY);
 					conta_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 9));
-					conta_numero_textField.setText("Digite o número da conta");
+					conta_numero_textField.setText("Digite o nÃºmero da conta");
 				}	else {
 					String sem_traco = conta_numero_textField.getText().replace("-", "");
 					if(!StringUtils.isNumeric(sem_traco)) {
 						conta_numero_textField.setBackground(Color.RED);
 						conta_numero_textField.setForeground(Color.WHITE);
 						conta_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						conta_numero_textField.setToolTipText("Digite somente números");
+						conta_numero_textField.setToolTipText("Digite somente nÃºmeros");
 					}else if(sem_traco.length()==7){
 						conta_numero_textField.setBackground(Color.WHITE);
 						conta_numero_textField.setForeground(Color.BLACK);
@@ -979,7 +996,7 @@ public class Panel extends JPanel {
 						conta_numero_textField.setBackground(Color.RED);
 						conta_numero_textField.setForeground(Color.WHITE);
 						conta_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						conta_numero_textField.setToolTipText("Digite uma conta válida");
+						conta_numero_textField.setToolTipText("Digite uma conta vÃ¡lida");
 					}
 					}
 				}
@@ -992,7 +1009,7 @@ public class Panel extends JPanel {
 					conta_numero_textField.setForeground(Color.BLACK);
 					conta_numero_textField.selectAll();
 				}
-				if(conta_numero_textField.getText().equals("Digite o número da conta")) {
+				if(conta_numero_textField.getText().equals("Digite o nÃºmero da conta")) {
 					conta_numero_textField.setText("");
 					conta_numero_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					conta_numero_textField.setBackground(Color.WHITE);
@@ -1015,6 +1032,13 @@ public class Panel extends JPanel {
 					conta_tipo_carteira_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
 					conta_tipo_carteira_textField.setText("Digite o tipo");
 				}else{
+					if(!StringUtils.isNumeric(conta_tipo_carteira_textField.getText()) ||
+							conta_tipo_carteira_textField.getText().length()!=2){
+						conta_tipo_carteira_textField.setBackground(Color.RED);
+						conta_tipo_carteira_textField.setForeground(Color.WHITE);
+						conta_tipo_carteira_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
+						conta_tipo_carteira_textField.setToolTipText("Digite somente números");
+					}
 					conta_tipo_carteira_textField.setBackground(Color.WHITE);
 					conta_tipo_carteira_textField.setForeground(Color.BLACK);
 				}
@@ -1052,11 +1076,11 @@ public class Panel extends JPanel {
 					conta_digito_agencia_textField.setText("Digite o digito");
 				}	else {
 
-					if(!StringUtils.isNumeric(conta_digito_agencia_textField.getText())) {
+					if(!StringUtils.isNumeric(conta_digito_agencia_textField.getText()) || conta_digito_agencia_textField.getText().length()>1) {
 						conta_digito_agencia_textField.setBackground(Color.RED);
 						conta_digito_agencia_textField.setForeground(Color.WHITE);
 						conta_digito_agencia_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						conta_digito_agencia_textField.setToolTipText("Digite somente números");
+						conta_digito_agencia_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						conta_digito_agencia_textField.setBackground(Color.WHITE);
 						conta_digito_agencia_textField.setForeground(Color.BLACK);
@@ -1092,15 +1116,15 @@ public class Panel extends JPanel {
 				if(conta_numero_agencia_textField.getText().length()==0) {
 					conta_numero_agencia_textField.setForeground(Color.LIGHT_GRAY);
 					conta_numero_agencia_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-					conta_numero_agencia_textField.setText("Digite o número");
+					conta_numero_agencia_textField.setText("Digite o nÃºmero");
 				}	else {
 					String sem_numero = conta_numero_agencia_textField.getText().replace("s/n", "0");
 					sem_numero = conta_numero_agencia_textField.getText().replace("sn", "0");
-					if(!StringUtils.isNumeric(sem_numero)) {
+					if(!StringUtils.isNumeric(sem_numero) || conta_numero_agencia_textField.getText().length()!=4) {
 						conta_numero_agencia_textField.setBackground(Color.RED);
 						conta_numero_agencia_textField.setForeground(Color.WHITE);
 						conta_numero_agencia_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						conta_numero_agencia_textField.setToolTipText("Digite somente números");
+						conta_numero_agencia_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						conta_numero_agencia_textField.setBackground(Color.WHITE);
 						conta_numero_agencia_textField.setForeground(Color.BLACK);
@@ -1116,7 +1140,7 @@ public class Panel extends JPanel {
 					conta_numero_agencia_textField.setForeground(Color.BLACK);
 					conta_numero_agencia_textField.selectAll();
 				}
-				if(conta_numero_agencia_textField.getText().equals("Digite o número")) {
+				if(conta_numero_agencia_textField.getText().equals("Digite o nÃºmero")) {
 					conta_numero_agencia_textField.setText("");
 					conta_numero_agencia_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					conta_numero_agencia_textField.setBackground(Color.WHITE);
@@ -1211,13 +1235,13 @@ public class Panel extends JPanel {
 				if(titulo_numero_documento_textField.getText().length()==0) {
 					titulo_numero_documento_textField.setForeground(Color.LIGHT_GRAY);
 					titulo_numero_documento_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-					titulo_numero_documento_textField.setText("Digite o número");
+					titulo_numero_documento_textField.setText("Digite o nÃºmero");
 				}	else {
 					if(!StringUtils.isNumeric(titulo_numero_documento_textField.getText())) {
 						titulo_numero_documento_textField.setBackground(Color.RED);
 						titulo_numero_documento_textField.setForeground(Color.WHITE);
 						titulo_numero_documento_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_numero_documento_textField.setToolTipText("Digite somente números");
+						titulo_numero_documento_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						titulo_numero_documento_textField.setBackground(Color.WHITE);
 						titulo_numero_documento_textField.setForeground(Color.BLACK);
@@ -1232,7 +1256,7 @@ public class Panel extends JPanel {
 					titulo_numero_documento_textField.setForeground(Color.BLACK);
 					titulo_numero_documento_textField.selectAll();
 				}
-				if(titulo_numero_documento_textField.getText().equals("Digite o número")) {
+				if(titulo_numero_documento_textField.getText().equals("Digite o nÃºmero")) {
 					titulo_numero_documento_textField.setText("");
 					titulo_numero_documento_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					titulo_numero_documento_textField.setBackground(Color.WHITE);
@@ -1250,16 +1274,22 @@ public class Panel extends JPanel {
 		titulo_nosso_numero_textField.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusLost(FocusEvent e) {
-				if(titulo_nosso_numero_textField.getText().length()==0) {
+				if(titulo_nosso_numero_textField.getText().length()==0)  {
 					titulo_nosso_numero_textField.setForeground(Color.LIGHT_GRAY);
 					titulo_nosso_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-					titulo_nosso_numero_textField.setText("Digite o número");
+					titulo_nosso_numero_textField.setText("Digite o nÃºmero");
 				}	else {
-					if(!StringUtils.isNumeric(titulo_nosso_numero_textField.getText())) {
+					if(titulo_nosso_numero_textField.getText().length()!=10 &&
+							titulo_nosso_numero_textField.getText().length()!=7 &&
+							titulo_nosso_numero_textField.getText().length()!=11 &&
+							titulo_nosso_numero_textField.getText().length()!=17 &&
+							titulo_nosso_numero_textField.getText().length()!=6) {
+
+					}	else if(!StringUtils.isNumeric(titulo_nosso_numero_textField.getText())) {
 						titulo_nosso_numero_textField.setBackground(Color.RED);
 						titulo_nosso_numero_textField.setForeground(Color.WHITE);
 						titulo_nosso_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_nosso_numero_textField.setToolTipText("Digite somente números");
+						titulo_nosso_numero_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						titulo_nosso_numero_textField.setBackground(Color.WHITE);
 						titulo_nosso_numero_textField.setForeground(Color.BLACK);
@@ -1274,7 +1304,7 @@ public class Panel extends JPanel {
 					titulo_nosso_numero_textField.setForeground(Color.BLACK);
 					titulo_nosso_numero_textField.selectAll();
 				}
-				if(titulo_nosso_numero_textField.getText().equals("Digite o número")) {
+				if(titulo_nosso_numero_textField.getText().equals("Digite o nÃºmero")) {
 					titulo_nosso_numero_textField.setText("");
 					titulo_nosso_numero_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 					titulo_nosso_numero_textField.setBackground(Color.WHITE);
@@ -1301,7 +1331,7 @@ public class Panel extends JPanel {
 						titulo_digito_nosso_numero_textField.setBackground(Color.RED);
 						titulo_digito_nosso_numero_textField.setForeground(Color.WHITE);
 						titulo_digito_nosso_numero_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_digito_nosso_numero_textField.setToolTipText("Digite somente números");
+						titulo_digito_nosso_numero_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						titulo_digito_nosso_numero_textField.setBackground(Color.WHITE);
 						titulo_digito_nosso_numero_textField.setForeground(Color.BLACK);
@@ -1352,13 +1382,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_valor_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_valor_textField.setText(titulo_valor_textField.getText().substring(0, titulo_valor_textField.getText().indexOf("."))+titulo_valor_textField.getText().substring((titulo_valor_textField.getText().indexOf(".")+1),titulo_valor_textField.getText().length()));
 						}
 					}
 					titulo_valor_textField.setText(titulo_valor_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_valor_textField.getText().replace(".", "");
-					
+
 					if(titulo_valor_textField.getText().length()<3) {
 						titulo_valor_textField.setText("00"+titulo_valor_textField.getText());
 					}
@@ -1380,7 +1410,7 @@ public class Panel extends JPanel {
 						titulo_valor_textField.setBackground(Color.RED);
 						titulo_valor_textField.setForeground(Color.WHITE);
 						titulo_valor_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_valor_textField.setToolTipText("Digite somente números");
+						titulo_valor_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_valor_textField.getText().contains(".")) {
 							titulo_valor_textField.setText(titulo_valor_textField.getText()+",00");
@@ -1401,23 +1431,23 @@ public class Panel extends JPanel {
 					titulo_valor_textField.setForeground(Color.BLACK);
 					titulo_valor_textField.selectAll();
 				}	else {
-					
-				if(titulo_valor_textField.getText().length()>0) {
-					if(titulo_valor_textField.getText().substring(0, 2).equals("R$")) {
-						titulo_valor_textField.setText(titulo_valor_textField.getText().substring(3, titulo_valor_textField.getText().length()));
-						titulo_valor_textField.setText(titulo_valor_textField.getText().replace(".", ""));
-						titulo_valor_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_valor_textField.setBackground(Color.WHITE);
-						titulo_valor_textField.setForeground(Color.BLACK);
-						titulo_valor_textField.selectAll();
-					}	else if(titulo_valor_textField.getText().equals("Digite o valor")) {
-						titulo_valor_textField.setText("");
-						titulo_valor_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_valor_textField.setBackground(Color.WHITE);
-						titulo_valor_textField.setForeground(Color.BLACK);
-						titulo_valor_textField.selectAll();
+
+					if(titulo_valor_textField.getText().length()>0) {
+						if(titulo_valor_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_valor_textField.setText(titulo_valor_textField.getText().substring(3, titulo_valor_textField.getText().length()));
+							titulo_valor_textField.setText(titulo_valor_textField.getText().replace(".", ""));
+							titulo_valor_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_valor_textField.setBackground(Color.WHITE);
+							titulo_valor_textField.setForeground(Color.BLACK);
+							titulo_valor_textField.selectAll();
+						}	else if(titulo_valor_textField.getText().equals("Digite o valor")) {
+							titulo_valor_textField.setText("");
+							titulo_valor_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_valor_textField.setBackground(Color.WHITE);
+							titulo_valor_textField.setForeground(Color.BLACK);
+							titulo_valor_textField.selectAll();
+						}
 					}
-				}
 				}
 			}
 		});
@@ -1432,25 +1462,34 @@ public class Panel extends JPanel {
 		titulo_data_documento_picker.setFont(new Font("SansSerif", Font.PLAIN, 9));
 		titulo_data_documento_picker.setDate(Calendar.getInstance().getTime());
 		titulo_data_documento_picker.setFormats(new SimpleDateFormat("dd.MM.yyyy"));
-        add(titulo_data_documento_picker);
+		add(titulo_data_documento_picker);
 
-        JXDatePicker titulo_data_vencimento_picker = new JXDatePicker();
-        titulo_data_vencimento_picker.setBounds(128, 380, 86, 20);
-        titulo_data_vencimento_picker.getEditor().setEditable(false);
-        titulo_data_vencimento_picker.setFont(new Font("SansSerif", Font.PLAIN, 9));
-        titulo_data_vencimento_picker.setDate(Calendar.getInstance().getTime());
-        titulo_data_vencimento_picker.setFormats(new SimpleDateFormat("dd.MM.yyyy"));
-        add(titulo_data_vencimento_picker);
-        
-        JPanel gambiarra_panel = new JPanel();
-        gambiarra_panel.setBounds(214, 400, 20, 20);
+		JXDatePicker titulo_data_vencimento_picker = new JXDatePicker();
+		titulo_data_vencimento_picker.setBounds(128, 380, 86, 20);
+		titulo_data_vencimento_picker.getEditor().setEditable(false);
+		titulo_data_vencimento_picker.setFont(new Font("SansSerif", Font.PLAIN, 9));
+		titulo_data_vencimento_picker.setDate(Calendar.getInstance().getTime());
+		titulo_data_vencimento_picker.setFormats(new SimpleDateFormat("dd.MM.yyyy"));
+		add(titulo_data_vencimento_picker);
+
+		JPanel gambiarra_panel = new JPanel();
+		gambiarra_panel.setBounds(214, 400, 20, 20);
 		add(gambiarra_panel);
+<<<<<<< HEAD
+
+
+		JComboBox titulo_tipo_documento_comboBox = new JComboBox();
+		titulo_tipo_documento_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
+		titulo_tipo_documento_comboBox.setBounds(128, 400, 106, 20);
+		titulo_tipo_documento_comboBox.getComponent(0).setVisible(false);
+=======
 		
         
         JComboBox titulo_tipo_documento_comboBox = new JComboBox();
         titulo_tipo_documento_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
-        titulo_tipo_documento_comboBox.setBounds(128, 400, 106, 20);
+        titulo_tipo_documento_comboBox.setBounds(128, 400, 86, 20);
         titulo_tipo_documento_comboBox.getComponent(0).setVisible(false);
+>>>>>>> 5aa93f00f16a579ca4a81ead271579ee63895e31
 		titulo_tipo_documento_comboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent e) {
 				titulo_tipo_documento_comboBox.setBounds(128, 400, 106, 20);
@@ -1465,8 +1504,8 @@ public class Panel extends JPanel {
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
 				gambiarra_panel.setBounds(214, 400, 0, 0);
-		        titulo_tipo_documento_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
-		        titulo_tipo_documento_comboBox.setBounds(128, 400, 250, 20);
+				titulo_tipo_documento_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
+				titulo_tipo_documento_comboBox.setBounds(128, 400, 250, 20);
 				titulo_tipo_documento_comboBox.repaint();
 			}
 		});
@@ -1476,9 +1515,9 @@ public class Panel extends JPanel {
 		titulo_tipo_documento_comboBox.setToolTipText("Escolha o tipo de documento");
 		add(titulo_tipo_documento_comboBox);
 		titulo_tipo_documento_comboBox.setToolTipText("Escolha o tipo de documento");
-        
+
 		JComboBox titulo_aceite_comboBox = new JComboBox();
-        titulo_aceite_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
+		titulo_aceite_comboBox.setFont(new Font("SansSerif", Font.PLAIN, 9));
 		titulo_aceite_comboBox.setName(" ");
 		titulo_aceite_comboBox.setBackground(Color.WHITE);
 		titulo_aceite_comboBox.setModel(new DefaultComboBoxModel(EnumAceite.values()));
@@ -1493,7 +1532,11 @@ public class Panel extends JPanel {
 				if(titulo_desconto_textField.getText().length()==0) {
 					titulo_desconto_textField.setForeground(Color.LIGHT_GRAY);
 					titulo_desconto_textField.setFont(new Font("SansSerif", Font.ITALIC, 9));
-					titulo_desconto_textField.setText("Digite a dedução");
+<<<<<<< HEAD
+					titulo_desconto_textField.setText("Digite o desconto");
+=======
+					titulo_desconto_textField.setText("Digite a deduÃ§Ã£o");
+>>>>>>> 5aa93f00f16a579ca4a81ead271579ee63895e31
 				}	else {
 					titulo_desconto_textField.setText(titulo_desconto_textField.getText().replace("$", ""));
 					titulo_desconto_textField.setText(titulo_desconto_textField.getText().replace("R", ""));
@@ -1507,13 +1550,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_desconto_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_desconto_textField.setText(titulo_desconto_textField.getText().substring(0, titulo_desconto_textField.getText().indexOf("."))+titulo_desconto_textField.getText().substring((titulo_desconto_textField.getText().indexOf(".")+1),titulo_desconto_textField.getText().length()));
 						}
 					}
 					titulo_desconto_textField.setText(titulo_desconto_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_desconto_textField.getText().replace(".", "");
-					
+
 					if(titulo_desconto_textField.getText().length()<3) {
 						titulo_desconto_textField.setText("00"+titulo_desconto_textField.getText());
 					}
@@ -1535,7 +1578,7 @@ public class Panel extends JPanel {
 						titulo_desconto_textField.setBackground(Color.RED);
 						titulo_desconto_textField.setForeground(Color.WHITE);
 						titulo_desconto_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_desconto_textField.setToolTipText("Digite somente números");
+						titulo_desconto_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_desconto_textField.getText().contains(".")) {
 							titulo_desconto_textField.setText(titulo_desconto_textField.getText()+",00");
@@ -1556,6 +1599,24 @@ public class Panel extends JPanel {
 					titulo_desconto_textField.setForeground(Color.BLACK);
 					titulo_desconto_textField.selectAll();
 				}	else {
+<<<<<<< HEAD
+
+					if(titulo_desconto_textField.getText().length()>0) {
+						if(titulo_desconto_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_desconto_textField.setText(titulo_desconto_textField.getText().substring(3, titulo_desconto_textField.getText().length()));
+							titulo_desconto_textField.setText(titulo_desconto_textField.getText().replace(".", ""));
+							titulo_desconto_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_desconto_textField.setBackground(Color.WHITE);
+							titulo_desconto_textField.setForeground(Color.BLACK);
+							titulo_desconto_textField.selectAll();
+						}	else if(titulo_desconto_textField.getText().equals("Digite o desconto")) {
+							titulo_desconto_textField.setText("");
+							titulo_desconto_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_desconto_textField.setBackground(Color.WHITE);
+							titulo_desconto_textField.setForeground(Color.BLACK);
+							titulo_desconto_textField.selectAll();
+						}
+=======
 					
 				if(titulo_desconto_textField.getText().length()>0) {
 					if(titulo_desconto_textField.getText().substring(0, 2).equals("R$")) {
@@ -1565,14 +1626,14 @@ public class Panel extends JPanel {
 						titulo_desconto_textField.setBackground(Color.WHITE);
 						titulo_desconto_textField.setForeground(Color.BLACK);
 						titulo_desconto_textField.selectAll();
-					}	else if(titulo_desconto_textField.getText().equals("Digite a dedução")) {
+					}	else if(titulo_desconto_textField.getText().equals("Digite a deduÃ§Ã£o")) {
 						titulo_desconto_textField.setText("");
 						titulo_desconto_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 						titulo_desconto_textField.setBackground(Color.WHITE);
 						titulo_desconto_textField.setForeground(Color.BLACK);
 						titulo_desconto_textField.selectAll();
+>>>>>>> 5aa93f00f16a579ca4a81ead271579ee63895e31
 					}
-				}
 				}
 			}
 		});
@@ -1588,7 +1649,7 @@ public class Panel extends JPanel {
 				if(titulo_deducao_textField.getText().length()==0) {
 					titulo_deducao_textField.setForeground(Color.LIGHT_GRAY);
 					titulo_deducao_textField.setFont(new Font("SansSerif", Font.ITALIC, 9));
-					titulo_deducao_textField.setText("Digite a dedução");
+					titulo_deducao_textField.setText("Digite a deduÃ§Ã£o");
 				}	else {
 					titulo_deducao_textField.setText(titulo_deducao_textField.getText().replace("$", ""));
 					titulo_deducao_textField.setText(titulo_deducao_textField.getText().replace("R", ""));
@@ -1602,13 +1663,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_deducao_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_deducao_textField.setText(titulo_deducao_textField.getText().substring(0, titulo_deducao_textField.getText().indexOf("."))+titulo_deducao_textField.getText().substring((titulo_deducao_textField.getText().indexOf(".")+1),titulo_deducao_textField.getText().length()));
 						}
 					}
 					titulo_deducao_textField.setText(titulo_deducao_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_deducao_textField.getText().replace(".", "");
-					
+
 					if(titulo_deducao_textField.getText().length()<3) {
 						titulo_deducao_textField.setText("00"+titulo_deducao_textField.getText());
 					}
@@ -1630,7 +1691,7 @@ public class Panel extends JPanel {
 						titulo_deducao_textField.setBackground(Color.RED);
 						titulo_deducao_textField.setForeground(Color.WHITE);
 						titulo_deducao_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_deducao_textField.setToolTipText("Digite somente números");
+						titulo_deducao_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_deducao_textField.getText().contains(".")) {
 							titulo_deducao_textField.setText(titulo_deducao_textField.getText()+",00");
@@ -1651,6 +1712,24 @@ public class Panel extends JPanel {
 					titulo_deducao_textField.setForeground(Color.BLACK);
 					titulo_deducao_textField.selectAll();
 				}	else {
+<<<<<<< HEAD
+
+					if(titulo_deducao_textField.getText().length()>0) {
+						if(titulo_deducao_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_deducao_textField.setText(titulo_deducao_textField.getText().substring(3, titulo_deducao_textField.getText().length()));
+							titulo_deducao_textField.setText(titulo_deducao_textField.getText().replace(".", ""));
+							titulo_deducao_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_deducao_textField.setBackground(Color.WHITE);
+							titulo_deducao_textField.setForeground(Color.BLACK);
+							titulo_deducao_textField.selectAll();
+						}	else if(titulo_deducao_textField.getText().equals("Digite a dedução")) {
+							titulo_deducao_textField.setText("");
+							titulo_deducao_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_deducao_textField.setBackground(Color.WHITE);
+							titulo_deducao_textField.setForeground(Color.BLACK);
+							titulo_deducao_textField.selectAll();
+						}
+=======
 					
 				if(titulo_deducao_textField.getText().length()>0) {
 					if(titulo_deducao_textField.getText().substring(0, 2).equals("R$")) {
@@ -1660,14 +1739,14 @@ public class Panel extends JPanel {
 						titulo_deducao_textField.setBackground(Color.WHITE);
 						titulo_deducao_textField.setForeground(Color.BLACK);
 						titulo_deducao_textField.selectAll();
-					}	else if(titulo_deducao_textField.getText().equals("Digite a dedução")) {
+					}	else if(titulo_deducao_textField.getText().equals("Digite a deduÃ§Ã£o")) {
 						titulo_deducao_textField.setText("");
 						titulo_deducao_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 						titulo_deducao_textField.setBackground(Color.WHITE);
 						titulo_deducao_textField.setForeground(Color.BLACK);
 						titulo_deducao_textField.selectAll();
+>>>>>>> 5aa93f00f16a579ca4a81ead271579ee63895e31
 					}
-				}
 				}
 			}
 		});
@@ -1697,13 +1776,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_mora_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_mora_textField.setText(titulo_mora_textField.getText().substring(0, titulo_mora_textField.getText().indexOf("."))+titulo_mora_textField.getText().substring((titulo_mora_textField.getText().indexOf(".")+1),titulo_mora_textField.getText().length()));
 						}
 					}
 					titulo_mora_textField.setText(titulo_mora_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_mora_textField.getText().replace(".", "");
-					
+
 					if(titulo_mora_textField.getText().length()<3) {
 						titulo_mora_textField.setText("00"+titulo_mora_textField.getText());
 					}
@@ -1725,7 +1804,7 @@ public class Panel extends JPanel {
 						titulo_mora_textField.setBackground(Color.RED);
 						titulo_mora_textField.setForeground(Color.WHITE);
 						titulo_mora_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_mora_textField.setToolTipText("Digite somente números");
+						titulo_mora_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_mora_textField.getText().contains(".")) {
 							titulo_mora_textField.setText(titulo_mora_textField.getText()+",00");
@@ -1746,23 +1825,23 @@ public class Panel extends JPanel {
 					titulo_mora_textField.setForeground(Color.BLACK);
 					titulo_mora_textField.selectAll();
 				}	else {
-					
-				if(titulo_mora_textField.getText().length()>0) {
-					if(titulo_mora_textField.getText().substring(0, 2).equals("R$")) {
-						titulo_mora_textField.setText(titulo_mora_textField.getText().substring(3, titulo_mora_textField.getText().length()));
-						titulo_mora_textField.setText(titulo_mora_textField.getText().replace(".", ""));
-						titulo_mora_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_mora_textField.setBackground(Color.WHITE);
-						titulo_mora_textField.setForeground(Color.BLACK);
-						titulo_mora_textField.selectAll();
-					}	else if(titulo_mora_textField.getText().equals("Digite a mora/multa")) {
-						titulo_mora_textField.setText("");
-						titulo_mora_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_mora_textField.setBackground(Color.WHITE);
-						titulo_mora_textField.setForeground(Color.BLACK);
-						titulo_mora_textField.selectAll();
+
+					if(titulo_mora_textField.getText().length()>0) {
+						if(titulo_mora_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_mora_textField.setText(titulo_mora_textField.getText().substring(3, titulo_mora_textField.getText().length()));
+							titulo_mora_textField.setText(titulo_mora_textField.getText().replace(".", ""));
+							titulo_mora_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_mora_textField.setBackground(Color.WHITE);
+							titulo_mora_textField.setForeground(Color.BLACK);
+							titulo_mora_textField.selectAll();
+						}	else if(titulo_mora_textField.getText().equals("Digite a mora/multa")) {
+							titulo_mora_textField.setText("");
+							titulo_mora_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_mora_textField.setBackground(Color.WHITE);
+							titulo_mora_textField.setForeground(Color.BLACK);
+							titulo_mora_textField.selectAll();
+						}
 					}
-				}
 				}
 			}
 		});
@@ -1778,7 +1857,7 @@ public class Panel extends JPanel {
 				if(titulo_acrescimo_textField.getText().length()==0) {
 					titulo_acrescimo_textField.setForeground(Color.LIGHT_GRAY);
 					titulo_acrescimo_textField.setFont(new Font("SansSerif", Font.ITALIC, 9));
-					titulo_acrescimo_textField.setText("Digite o acréscimo");
+					titulo_acrescimo_textField.setText("Digite o acrÃ©scimo");
 				}	else {
 					titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().replace("$", ""));
 					titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().replace("R", ""));
@@ -1792,13 +1871,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_acrescimo_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().substring(0, titulo_acrescimo_textField.getText().indexOf("."))+titulo_acrescimo_textField.getText().substring((titulo_acrescimo_textField.getText().indexOf(".")+1),titulo_acrescimo_textField.getText().length()));
 						}
 					}
 					titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_acrescimo_textField.getText().replace(".", "");
-					
+
 					if(titulo_acrescimo_textField.getText().length()<3) {
 						titulo_acrescimo_textField.setText("00"+titulo_acrescimo_textField.getText());
 					}
@@ -1820,7 +1899,7 @@ public class Panel extends JPanel {
 						titulo_acrescimo_textField.setBackground(Color.RED);
 						titulo_acrescimo_textField.setForeground(Color.WHITE);
 						titulo_acrescimo_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_acrescimo_textField.setToolTipText("Digite somente números");
+						titulo_acrescimo_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_acrescimo_textField.getText().contains(".")) {
 							titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText()+",00");
@@ -1841,6 +1920,24 @@ public class Panel extends JPanel {
 					titulo_acrescimo_textField.setForeground(Color.BLACK);
 					titulo_acrescimo_textField.selectAll();
 				}	else {
+<<<<<<< HEAD
+
+					if(titulo_acrescimo_textField.getText().length()>0) {
+						if(titulo_acrescimo_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().substring(3, titulo_acrescimo_textField.getText().length()));
+							titulo_acrescimo_textField.setText(titulo_acrescimo_textField.getText().replace(".", ""));
+							titulo_acrescimo_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_acrescimo_textField.setBackground(Color.WHITE);
+							titulo_acrescimo_textField.setForeground(Color.BLACK);
+							titulo_acrescimo_textField.selectAll();
+						}	else if(titulo_acrescimo_textField.getText().equals("Digite o acréscimo")) {
+							titulo_acrescimo_textField.setText("");
+							titulo_acrescimo_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_acrescimo_textField.setBackground(Color.WHITE);
+							titulo_acrescimo_textField.setForeground(Color.BLACK);
+							titulo_acrescimo_textField.selectAll();
+						}
+=======
 					
 				if(titulo_acrescimo_textField.getText().length()>0) {
 					if(titulo_acrescimo_textField.getText().substring(0, 2).equals("R$")) {
@@ -1850,14 +1947,14 @@ public class Panel extends JPanel {
 						titulo_acrescimo_textField.setBackground(Color.WHITE);
 						titulo_acrescimo_textField.setForeground(Color.BLACK);
 						titulo_acrescimo_textField.selectAll();
-					}	else if(titulo_acrescimo_textField.getText().equals("Digite o acréscimo")) {
+					}	else if(titulo_acrescimo_textField.getText().equals("Digite o acrÃ©scimo")) {
 						titulo_acrescimo_textField.setText("");
 						titulo_acrescimo_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
 						titulo_acrescimo_textField.setBackground(Color.WHITE);
 						titulo_acrescimo_textField.setForeground(Color.BLACK);
 						titulo_acrescimo_textField.selectAll();
+>>>>>>> 5aa93f00f16a579ca4a81ead271579ee63895e31
 					}
-				}
 				}
 			}
 		});
@@ -1887,13 +1984,13 @@ public class Panel extends JPanel {
 								if(StringUtils.countMatches(titulo_valor_cobrado_textField.getText(), ".")==1) {
 									break;
 								}
-						}
+							}
 							titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().substring(0, titulo_valor_cobrado_textField.getText().indexOf("."))+titulo_valor_cobrado_textField.getText().substring((titulo_valor_cobrado_textField.getText().indexOf(".")+1),titulo_valor_cobrado_textField.getText().length()));
 						}
 					}
 					titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().replace(",","."));				
 					String somente_numeros= titulo_valor_cobrado_textField.getText().replace(".", "");
-					
+
 					if(titulo_valor_cobrado_textField.getText().length()<3) {
 						titulo_valor_cobrado_textField.setText("00"+titulo_valor_cobrado_textField.getText());
 					}
@@ -1915,7 +2012,7 @@ public class Panel extends JPanel {
 						titulo_valor_cobrado_textField.setBackground(Color.RED);
 						titulo_valor_cobrado_textField.setForeground(Color.WHITE);
 						titulo_valor_cobrado_textField.setFont(new Font("SansSerif", Font.ITALIC, 10));
-						titulo_valor_cobrado_textField.setToolTipText("Digite somente números");
+						titulo_valor_cobrado_textField.setToolTipText("Digite somente nÃºmeros");
 					}else{
 						if(!titulo_valor_cobrado_textField.getText().contains(".")) {
 							titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText()+",00");
@@ -1936,23 +2033,23 @@ public class Panel extends JPanel {
 					titulo_valor_cobrado_textField.setForeground(Color.BLACK);
 					titulo_valor_cobrado_textField.selectAll();
 				}	else {
-					
-				if(titulo_valor_cobrado_textField.getText().length()>0) {
-					if(titulo_valor_cobrado_textField.getText().substring(0, 2).equals("R$")) {
-						titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().substring(3, titulo_valor_cobrado_textField.getText().length()));
-						titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().replace(".",""));
-						titulo_valor_cobrado_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_valor_cobrado_textField.setBackground(Color.WHITE);
-						titulo_valor_cobrado_textField.setForeground(Color.BLACK);
-						titulo_valor_cobrado_textField.selectAll();
-					}	else if(titulo_valor_cobrado_textField.getText().equals("Digite o valor")) {
-						titulo_valor_cobrado_textField.setText("");
-						titulo_valor_cobrado_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
-						titulo_valor_cobrado_textField.setBackground(Color.WHITE);
-						titulo_valor_cobrado_textField.setForeground(Color.BLACK);
-						titulo_valor_cobrado_textField.selectAll();
+
+					if(titulo_valor_cobrado_textField.getText().length()>0) {
+						if(titulo_valor_cobrado_textField.getText().substring(0, 2).equals("R$")) {
+							titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().substring(3, titulo_valor_cobrado_textField.getText().length()));
+							titulo_valor_cobrado_textField.setText(titulo_valor_cobrado_textField.getText().replace(".",""));
+							titulo_valor_cobrado_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_valor_cobrado_textField.setBackground(Color.WHITE);
+							titulo_valor_cobrado_textField.setForeground(Color.BLACK);
+							titulo_valor_cobrado_textField.selectAll();
+						}	else if(titulo_valor_cobrado_textField.getText().equals("Digite o valor")) {
+							titulo_valor_cobrado_textField.setText("");
+							titulo_valor_cobrado_textField.setFont(new Font("SansSerif", Font.PLAIN, 10));
+							titulo_valor_cobrado_textField.setBackground(Color.WHITE);
+							titulo_valor_cobrado_textField.setForeground(Color.BLACK);
+							titulo_valor_cobrado_textField.selectAll();
+						}
 					}
-				}
 				}
 			}
 		});
@@ -2081,32 +2178,170 @@ public class Panel extends JPanel {
 		add(boleto_instrucao8_textField);
 
 		btnGerarBoleto = new JButton("Gerar Boleto");
-		btnGerarBoleto.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				Boleto boleto = null;
-				BoletoViewer boletoViewer = new BoletoViewer(boleto);
-				boletoViewer.setTemplate("C:\\Users\\FZ\\eclipse-workspace\\Boleto\\src\\templates\\B001_BoletoEstiloFatura.pdf");	
-				File arquivoPdf = boletoViewer.getPdfAsFile("B001_BoletoEstiloFaturaGerado.pdf");
-				mostreBoletoNaTela(arquivoPdf);
-			}
+		btnGerarBoleto.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
 
-			private void mostreBoletoNaTela(File arquivoBoleto) {
-
-				java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
-
-				try {
-					desktop.open(arquivoBoleto);
-				} catch (IOException e) {
-					e.printStackTrace();
+				// criando sacado
+				boolean sacado_ok = false;
+				if(sacado_nome_textField.getText().length()>0 && !sacado_nome_textField.getText().equals("Digite o nome") && sacado_nome_textField.getBackground()!= Color.RED) {
+					if(sacado_CPF_textField.getText().length()>0 && !sacado_CPF_textField.getText().equals("Digite o nome") && sacado_CPF_textField.getBackground()!= Color.RED) {
+						if(sacado_UF_comboBox.getSelectedItem().toString().length()>0) {
+							if(sacado_localidade_textField.getText().length()>0 && !sacado_localidade_textField.getText().equals("Digite a localidade") && sacado_localidade_textField.getBackground()!= Color.RED) {
+								if(sacado_CEP_textField.getText().length()>0 && !sacado_CEP_textField.getText().equals("Digite o CEP") && sacado_CEP_textField.getBackground()!= Color.RED) {
+									if(sacado_bairro_textField.getText().length()>0 && !sacado_bairro_textField.getText().equals("Digite o bairro") && sacado_bairro_textField.getBackground()!= Color.RED) {
+										if(sacado_logradouro_textField.getText().length()>0 && !sacado_logradouro_textField.getText().equals("Digite o bairro") && sacado_logradouro_textField.getBackground()!= Color.RED) {
+											if(sacado_numero_textField.getText().length()>0 && !sacado_numero_textField.getText().equals("Digite o bairro") && sacado_numero_textField.getBackground()!= Color.RED) {
+												sacado_ok=true;
+											}
+										}					
+									}
+								}
+							}
+						}
+					}
 				}
+
+				boolean avalista_ok = false;
+				if(avalista_nome_textField.getText().length()>0 && !avalista_nome_textField.getText().equals("Digite o nome") && avalista_nome_textField.getBackground()!= Color.RED) {
+					if(avalista_CPF_textField.getText().length()>0 && !avalista_CPF_textField.getText().equals("Digite o CPF") && avalista_CPF_textField.getBackground()!= Color.RED) {
+						if(avalista_UF_comboBox.getSelectedItem().toString().length()>0) {
+							if(avalista_localidade_textField.getText().length()>0 && !avalista_localidade_textField.getText().equals("Digite a localidade") && avalista_localidade_textField.getBackground()!= Color.RED) {
+								if(avalista_CEP_textField.getText().length()>0 && !avalista_CEP_textField.getText().equals("Digite o CEP") && avalista_CEP_textField.getBackground()!= Color.RED) {
+									if(avalista_bairro_textField.getText().length()>0 && !avalista_bairro_textField.getText().equals("Digite o bairro") && avalista_bairro_textField.getBackground()!= Color.RED) {
+										if(avalista_logradouro_textField.getText().length()>0 && !avalista_logradouro_textField.getText().equals("Digite o bairro") && avalista_logradouro_textField.getBackground()!= Color.RED) {
+											if(avalista_numero_textField.getText().length()>0 && !avalista_numero_textField.getText().equals("Digite o bairro") && avalista_numero_textField.getBackground()!= Color.RED) {
+												avalista_ok=true;
+											}
+										}					
+									}
+								}
+							}
+						}
+					}
+				}
+				boolean cedente_ok = false;
+				if(cedente_nome_textField.getText().length()>0 && !cedente_nome_textField.getText().equals("Digite o nome") && cedente_nome_textField.getBackground()!= Color.RED) {
+					if(cedente_CNPJ_textField.getText().length()>0 && !cedente_CNPJ_textField.getText().equals("Digite o CNPJ") && cedente_CNPJ_textField.getBackground()!= Color.RED) {
+						cedente_ok=true;
+					}
+				}
+
+				boolean conta_ok = false;
+				if(conta_numero_textField.getText().length()>0 && !avalista_nome_textField.getText().equals("Digite o número da conta") && avalista_nome_textField.getBackground()!= Color.RED) {
+					if(conta_tipo_carteira_textField.getText().length()>0 && !conta_tipo_carteira_textField.getText().equals("Digite o tipo") && conta_tipo_carteira_textField.getBackground()!= Color.RED) {
+						if(conta_digito_agencia_textField.getText().length()>0 && !conta_digito_agencia_textField.getText().equals("Digite o digito") && conta_digito_agencia_textField.getBackground()!= Color.RED) {
+							if(conta_numero_agencia_textField.getText().length()>0 && !conta_numero_agencia_textField.getText().equals("Digite o número") && conta_numero_agencia_textField.getBackground()!= Color.RED) {
+								conta_ok=true;
+							}
+						}
+					}
+				}
+
+				boolean titulo_ok = false;
+				if(titulo_numero_documento_textField.getText().length()>0 && !titulo_numero_documento_textField.getText().equals("Digite o número") && titulo_numero_documento_textField.getBackground()!= Color.RED) {
+					if(titulo_nosso_numero_textField.getText().length()>0 && !titulo_nosso_numero_textField.getText().equals("Digite o número") && titulo_nosso_numero_textField.getBackground()!= Color.RED) {
+						if(titulo_digito_nosso_numero_textField.getText().length()>0 && !titulo_digito_nosso_numero_textField.getText().equals("Digite o digito") && titulo_digito_nosso_numero_textField.getBackground()!= Color.RED) {
+							if(titulo_valor_textField.getText().length()>0 && !titulo_valor_textField.getText().equals("Digite o valor") && titulo_valor_textField.getBackground()!= Color.RED) {
+								if(titulo_data_documento_picker.getEditor().getText().length()>0) {					
+									if(titulo_data_vencimento_picker.getEditor().getText().length()>0) {					
+										if(titulo_desconto_textField.getText().length()>0 && !titulo_desconto_textField.getText().equals("Digite o desconto") && titulo_desconto_textField.getBackground()!= Color.RED) {
+											if(titulo_deducao_textField.getText().length()>0 && !titulo_deducao_textField.getText().equals("Digite a dedução") && titulo_deducao_textField.getBackground()!= Color.RED) {
+												if(titulo_mora_textField.getText().length()>0 && !titulo_mora_textField.getText().equals("Digite a mora/multa") && titulo_mora_textField.getBackground()!= Color.RED) {
+													if(titulo_acrescimo_textField.getText().length()>0 && !titulo_acrescimo_textField.getText().equals("Digite o acréscimo") && titulo_acrescimo_textField.getBackground()!= Color.RED) {
+														if(titulo_valor_cobrado_textField.getText().length()>0 && !titulo_valor_cobrado_textField.getText().equals("Digite o valor") && titulo_valor_cobrado_textField.getBackground()!= Color.RED) {
+															titulo_ok=true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				if(sacado_ok && avalista_ok && cedente_ok && conta_ok && titulo_ok) {
+
+					Sacado sacado = new Sacado(sacado_nome_textField.getText(), sacado_CPF_textField.getText());
+					Endereco enderecoSac = new Endereco();
+					System.out.println(sacado_UF_comboBox.getSelectedItem().toString().substring((sacado_UF_comboBox.getSelectedItem().toString().length()-3),(sacado_UF_comboBox.getSelectedItem().toString().length()-1)));
+					enderecoSac.setUF(UnidadeFederativa.valueOfSigla(sacado_UF_comboBox.getSelectedItem().toString().substring((sacado_UF_comboBox.getSelectedItem().toString().length()-3),(sacado_UF_comboBox.getSelectedItem().toString().length()-1))));
+					enderecoSac.setLocalidade(sacado_localidade_textField.getText());
+					enderecoSac.setCep(new CEP(sacado_CEP_textField.getText()));
+					enderecoSac.setBairro(sacado_bairro_textField.getText());
+					enderecoSac.setLogradouro(sacado_logradouro_textField.getText());
+					enderecoSac.setNumero(sacado_numero_textField.getText());
+					sacado.addEndereco(enderecoSac);
+
+					SacadorAvalista sacadorAvalista = new SacadorAvalista(avalista_nome_textField.getText(), avalista_CPF_textField.getText());
+					Endereco enderecoSacAval = new Endereco();
+					enderecoSacAval.setUF(UnidadeFederativa.valueOfSigla(avalista_UF_comboBox.getSelectedItem().toString().substring((avalista_UF_comboBox.getSelectedItem().toString().length()-3),(avalista_UF_comboBox.getSelectedItem().toString().length()-1))));
+					enderecoSacAval.setLocalidade(avalista_localidade_textField.getText());
+					enderecoSacAval.setCep(new CEP(avalista_CEP_textField.getText()));
+					enderecoSacAval.setBairro(avalista_bairro_textField.getText());
+					enderecoSacAval.setLogradouro(avalista_logradouro_textField.getText());
+					enderecoSacAval.setNumero(avalista_numero_textField.getText());
+					sacadorAvalista.addEndereco(enderecoSacAval);
+
+					Cedente cedente = new Cedente(cedente_nome_textField.getText(), cedente_CNPJ_textField.getText());
+
+					ContaBancaria contaBancaria = new ContaBancaria(BancosSuportados.valueOf(comboBox.getSelectedItem().toString()).create());
+					contaBancaria.setNumeroDaConta(new NumeroDaConta(Integer.parseInt(conta_numero_textField.getText().substring(0, 6)), conta_numero_textField.getText().substring(7, 8)));
+					contaBancaria.setCarteira(new Carteira(Integer.parseInt(conta_tipo_carteira_textField.getText())));
+					contaBancaria.setAgencia(new Agencia(Integer.parseInt(conta_numero_agencia_textField.getText()), conta_digito_agencia_textField.getText()));
+
+					Titulo titulo = new Titulo(contaBancaria, sacado, cedente, sacadorAvalista);
+					titulo.setNumeroDoDocumento(titulo_numero_documento_textField.getText());
+					titulo.setNossoNumero(titulo_nosso_numero_textField.getText());
+					titulo.setDigitoDoNossoNumero(titulo_digito_nosso_numero_textField.getText());
+					titulo.setValor(BigDecimal.valueOf(Double.parseDouble(((titulo_valor_textField.getText().substring(3, titulo_valor_textField.getText().length()).replace(".", "").replace(",","."))))));
+					titulo.setDataDoDocumento(titulo_data_documento_picker.getDate());
+					titulo.setDataDoVencimento(titulo_data_vencimento_picker.getDate());
+					titulo.setTipoDeDocumento(TipoDeTitulo.valueOf(titulo_tipo_documento_comboBox.getSelectedItem().toString()));
+					titulo.setAceite(EnumAceite.valueOf(titulo_aceite_comboBox.getSelectedItem().toString()));
+					titulo.setDesconto(BigDecimal.valueOf(Double.parseDouble(((titulo_desconto_textField.getText().substring(3, titulo_desconto_textField.getText().length()).replace(".", "").replace(",","."))))));
+					titulo.setDeducao(BigDecimal.valueOf(Double.parseDouble(((titulo_deducao_textField.getText().substring(3, titulo_deducao_textField.getText().length()).replace(".", "").replace(",","."))))));
+					titulo.setMora(BigDecimal.valueOf(Double.parseDouble(((titulo_mora_textField.getText().substring(3, titulo_mora_textField.getText().length()).replace(".", "").replace(",","."))))));
+					titulo.setAcrecimo(BigDecimal.valueOf(Double.parseDouble(((titulo_acrescimo_textField.getText().substring(3, titulo_acrescimo_textField.getText().length()).replace(".", "").replace(",","."))))));
+					titulo.setValorCobrado(BigDecimal.valueOf(Double.parseDouble(((titulo_valor_cobrado_textField.getText().substring(3, titulo_valor_cobrado_textField.getText().length()).replace(".", "").replace(",","."))))));
+
+					Boleto boleto = new Boleto(titulo);
+
+					boleto.setLocalPagamento(boleto_local_pagamento_textField.getText());
+					boleto.setInstrucaoAoSacado(boleto_instrucao_sacado_textField.getText());
+					boleto.setInstrucao1(boleto_instrucao1_textField.getText());
+					boleto.setInstrucao2(boleto_instrucao2_textField.getText());
+					boleto.setInstrucao3(boleto_instrucao3_textField.getText());
+					boleto.setInstrucao4(boleto_instrucao4_textField.getText());
+					boleto.setInstrucao5(boleto_instrucao5_textField.getText());
+					boleto.setInstrucao6(boleto_instrucao6_textField.getText());
+					boleto.setInstrucao7(boleto_instrucao7_textField.getText());
+					boleto.setInstrucao8(boleto_instrucao8_textField.getText());
+
+					BoletoViewer boletoViewer = new BoletoViewer(boleto);
+
+					File arquivoPdf = boletoViewer.getPdfAsFile("MeuPrimeiroBoleto.pdf");
+					mostreBoletoNaTela(arquivoPdf);
+				}
+
 			}
 		});
 		btnGerarBoleto.setBounds(429, 496, 119, 23);
 		btnGerarBoleto.setBackground(Color.DARK_GRAY);
 		btnGerarBoleto.setForeground(Color.WHITE);
 		add(btnGerarBoleto);
-		setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{comboBox, sacado_nome_textField, sacado_CPF_textField, sacado_UF_comboBox, sacado_localidade_textField, sacado_CEP_textField, sacado_bairro_textField, sacado_logradouro_textField, sacado_numero_textField, avalista_nome_textField, avalista_CPF_textField, avalista_UF_comboBox, avalista_localidade_textField, avalista_CEP_textField, avalista_bairro_textField, avalista_logradouro_textField, avalista_numero_textField, cedente_nome_textField, cedente_CNPJ_textField, conta_numero_textField, conta_tipo_carteira_textField, conta_digito_agencia_textField, conta_numero_agencia_textField, titulo_numero_documento_textField, titulo_nosso_numero_textField, titulo_digito_nosso_numero_textField, titulo_valor_textField, titulo_data_documento_picker, titulo_data_vencimento_picker, titulo_tipo_documento_comboBox, titulo_aceite_comboBox, titulo_deducao_textField,  titulo_deducao_textField, titulo_mora_textField, titulo_acrescimo_textField, titulo_valor_cobrado_textField, boleto_local_pagamento_textField, boleto_instrucao_sacado_textField, boleto_instrucao1_textField, boleto_instrucao2_textField, boleto_instrucao3_textField, boleto_instrucao4_textField, boleto_instrucao5_textField, boleto_instrucao6_textField, boleto_instrucao7_textField, boleto_instrucao8_textField, btnGerarBoleto}));
+		setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{comboBox, sacado_nome_textField, sacado_CPF_textField, sacado_UF_comboBox, sacado_localidade_textField, sacado_CEP_textField, sacado_bairro_textField, sacado_logradouro_textField, sacado_numero_textField, avalista_nome_textField, avalista_CPF_textField, avalista_UF_comboBox, avalista_localidade_textField, avalista_CEP_textField, avalista_bairro_textField, avalista_logradouro_textField, avalista_numero_textField, cedente_nome_textField, cedente_CNPJ_textField, conta_numero_textField, conta_tipo_carteira_textField, conta_digito_agencia_textField, conta_numero_agencia_textField, titulo_numero_documento_textField, titulo_nosso_numero_textField, titulo_digito_nosso_numero_textField, titulo_valor_textField, titulo_data_documento_picker, titulo_data_vencimento_picker, titulo_tipo_documento_comboBox, titulo_aceite_comboBox, titulo_desconto_textField, titulo_deducao_textField, titulo_mora_textField, titulo_acrescimo_textField, titulo_valor_cobrado_textField, boleto_local_pagamento_textField, boleto_instrucao_sacado_textField, boleto_instrucao1_textField, boleto_instrucao2_textField, boleto_instrucao3_textField, boleto_instrucao4_textField, boleto_instrucao5_textField, boleto_instrucao6_textField, boleto_instrucao7_textField, boleto_instrucao8_textField, btnGerarBoleto}));
 
+	}
+
+	public JButton getBtnGerarBoleto() {
+		return btnGerarBoleto;
+	}
+
+	public void setBtnGerarBoleto(JButton btnGerarBoleto) {
+		this.btnGerarBoleto = btnGerarBoleto;
 	}
 
 	private String formatar_textfield_nome(String textfield_text) {
@@ -2239,5 +2474,16 @@ public class Panel extends JPanel {
 			textfield_text = "0"+textfield_text;
 		}
 		return "R$ "+textfield_text;
+	}
+
+	private static void mostreBoletoNaTela(File arquivoBoleto) {
+
+		java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+
+		try {
+			desktop.open(arquivoBoleto);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
